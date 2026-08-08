@@ -1,3 +1,428 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Intelligence — Content Decline Prediction</title>
 
-  </html>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 40px 24px;
+      color: #222;
+      background: #fff;
+    }
+
+    h1 {
+      font-size: 36px;
+      line-height: 1.2;
+      margin-bottom: 10px;
+    }
+
+    h2 {
+      margin-top: 48px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+    }
+
+    h3 {
+      margin-top: 28px;
+    }
+
+    .meta {
+      color: #666;
+      margin-bottom: 40px;
+    }
+
+    .abstract {
+      background: #f5f5f5;
+      padding: 20px;
+      border-left: 4px solid #333;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background: #f5f5f5;
+    }
+
+    .note {
+      background: #fafafa;
+      padding: 16px;
+      margin: 20px 0;
+      border: 1px solid #ddd;
+    }
+
+    code {
+      background: #f1f1f1;
+      padding: 2px 5px;
+    }
+
+    footer {
+      margin-top: 60px;
+      padding-top: 20px;
+      border-top: 1px solid #ddd;
+      color: #666;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h1>Search Intelligence: Predicting Content Performance Decline</h1>
+
+    <div class="meta">
+      <strong>Author:</strong> Shamir Ali<br>
+      <strong>Lane:</strong> Refresh / Content Opportunity Scoring<br>
+      <strong>Project:</strong> FlyRank ML Internship
+    </div>
+  </header>
+
+
+  <h2>Abstract</h2>
+
+  <div class="abstract">
+    <p>
+      This project asks whether search-performance signals can be used to identify content
+      that is likely to experience a significant decline in impressions. The analysis uses
+      the FlyRank internship warehouse and combines monthly impression data with query-level
+      signals. A Random Forest classifier was trained using a client-grouped train/test split
+      and compared with a simple baseline based on search visibility. On the held-out test
+      data, the model achieved an F1 score of 0.47, with precision of 0.53 and recall of
+      0.42 for the decline class. The resulting ranking is intended as decision-support for
+      content review and prioritization rather than as a causal explanation of search
+      ranking behavior.
+    </p>
+  </div>
+
+
+  <h2>1. Introduction / Problem Statement</h2>
+
+  <p>
+    Content teams need to decide which pages should be reviewed or refreshed first.
+    Reviewing every page equally is inefficient, so a useful system should help prioritize
+    pages using measurable search-performance signals.
+  </p>
+
+  <p>
+    The decision supported by this project is:
+    <strong>which content pages should receive attention because their search visibility
+    may be declining?</strong>
+  </p>
+
+  <p>
+    The unit of analysis is a content page. The output is a ranked list based on the model's
+    estimated probability of an impressions decline. A human editor can use this ranking
+    to decide which pages should be reviewed first.
+  </p>
+
+  <p>
+    A wrong recommendation can waste editorial effort or cause a genuinely important page
+    to be missed. This is why the model is treated as a prioritization tool rather than an
+    automatic decision maker.
+  </p>
+
+
+  <h2>2. Data</h2>
+
+  <p>
+    The project uses the FlyRank ML Internship dataset from the
+    <strong>FlyRank/internship-warehouse</strong> release.
+  </p>
+
+  <p>
+    The main source used was the daily content-performance table. Monthly content-level
+    impressions were calculated for February 2026 and March 2026. Query-level signals were
+    also used from the 90-day content-query data.
+  </p>
+
+  <h3>Features used</h3>
+
+  <table>
+    <tr>
+      <th>Feature</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td>prev_month_impressions</td>
+      <td>Content impressions in the previous month.</td>
+    </tr>
+    <tr>
+      <td>visible_queries</td>
+      <td>Number of visible search queries associated with the content.</td>
+    </tr>
+    <tr>
+      <td>rare_share</td>
+      <td>Share of impressions associated with rare queries.</td>
+    </tr>
+    <tr>
+      <td>anon_share</td>
+      <td>Share of impressions associated with anonymized queries.</td>
+    </tr>
+    <tr>
+      <td>top_query_share</td>
+      <td>Share of retained impressions contributed by the highest-impression query.</td>
+    </tr>
+  </table>
+
+  <p>
+    Client and content identifiers were used for grouping and joining where required, but
+    were not used as predictive features.
+  </p>
+
+  <p>
+    Label-derived fields and future outcome information were not used as model features.
+    The analysis also avoids exposing client names, domains, URLs, private queries, or other
+    identifying information.
+  </p>
+
+
+  <h2>3. Methodology</h2>
+
+  <h3>Target definition</h3>
+
+  <p>
+    A content page is labelled as declining when its current-month impressions are less than
+    80% of its previous-month impressions.
+  </p>
+
+  <p>
+    In other words, the target represents an impressions decline of more than 20%.
+  </p>
+
+  <h3>Baseline</h3>
+
+  <p>
+    The baseline is a simple visibility-based rule. Pages with at least 1,000 impressions
+    and an average position between 4 and 15 receive a high-visibility priority score.
+    Other pages are assigned lower priority.
+  </p>
+
+  <p>
+    The baseline was intentionally kept simple so that the machine-learning model could be
+    compared against a transparent rule.
+  </p>
+
+  <h3>Model</h3>
+
+  <p>
+    A Random Forest classifier was selected because it can model non-linear relationships
+    between search signals and can provide feature-importance estimates for interpretation.
+  </p>
+
+  <h3>Validation</h3>
+
+  <p>
+    The data was split using <strong>GroupShuffleSplit</strong> with clients as groups.
+    80% of the data was used for training and 20% for testing, with a fixed random seed of
+    42. Clients appearing in the test set were not used for training.
+  </p>
+
+  <p>
+    This provides a more realistic test of whether the model can generalize to clients it
+    has not seen during training.
+  </p>
+
+
+  <h2>4. Results</h2>
+
+  <p>
+    The Random Forest was evaluated on the held-out client-grouped test set.
+  </p>
+
+  <table>
+    <tr>
+      <th>Metric</th>
+      <th>Random Forest</th>
+    </tr>
+    <tr>
+      <td>Accuracy</td>
+      <td>0.649</td>
+    </tr>
+    <tr>
+      <td>Precision</td>
+      <td>0.531</td>
+    </tr>
+    <tr>
+      <td>Recall</td>
+      <td>0.422</td>
+    </tr>
+    <tr>
+      <td>F1 Score</td>
+      <td>0.471</td>
+    </tr>
+  </table>
+
+  <p>
+    For the decline class, the model correctly identified approximately 42% of the actual
+    declining cases in the test set and had approximately 53% precision.
+  </p>
+
+  <div class="note">
+    <strong>Interpretation:</strong>
+    The model should not be judged by accuracy alone because the target classes are
+    imbalanced. Precision, recall, and F1 are more useful for evaluating the decline class.
+  </div>
+
+
+  <h2>5. Limitations & Honest Framing</h2>
+
+  <ul>
+    <li>The model identifies statistical patterns in the available data; it does not establish causation.</li>
+    <li>The model does not predict or reproduce Google's ranking algorithm.</li>
+    <li>Search intent, seasonality, content quality, and other factors are not fully represented.</li>
+    <li>The baseline is intentionally simple and is based mainly on visibility and position.</li>
+    <li>The model's recommendations require human review before an editorial action is taken.</li>
+    <li>The evaluation uses a specific time window and should not automatically be treated as evidence that the same performance will hold in every future period.</li>
+  </ul>
+
+  <p>
+    The results are therefore best described as <strong>observed and directional
+    decision-support evidence</strong>.
+  </p>
+
+
+  <h2>6. Ranked Recommendations</h2>
+
+  <p>
+    The model produces a ranking based on the estimated probability that a content page
+    belongs to the impressions-decline class.
+  </p>
+
+  <table>
+    <tr>
+      <th>Priority</th>
+      <th>Model probability</th>
+      <th>Recommended action</th>
+    </tr>
+    <tr>
+      <td>High</td>
+      <td>≥ 0.70</td>
+      <td>Review for Content Refresh</td>
+    </tr>
+    <tr>
+      <td>Medium</td>
+      <td>0.50–0.69</td>
+      <td>Monitor and consider review</td>
+    </tr>
+    <tr>
+      <td>Low</td>
+      <td>&lt; 0.50</td>
+      <td>Low priority / monitor</td>
+    </tr>
+  </table>
+
+  <h3>Suggested editorial workflow</h3>
+
+  <ol>
+    <li>Start with pages receiving the highest model scores.</li>
+    <li>Check whether the page has actually experienced a meaningful performance decline.</li>
+    <li>Review recent content changes and search intent.</li>
+    <li>Decide whether the page should be refreshed, monitored, or left unchanged.</li>
+  </ol>
+
+  <p>
+    These recommendations are prioritization suggestions, not automatic content decisions.
+  </p>
+
+
+  <h2>7. Artifacts</h2>
+
+  <h3>Model features</h3>
+
+  <table>
+    <tr>
+      <th>Feature</th>
+      <th>Role</th>
+    </tr>
+    <tr>
+      <td>prev_month_impressions</td>
+      <td>Previous search visibility</td>
+    </tr>
+    <tr>
+      <td>visible_queries</td>
+      <td>Query coverage</td>
+    </tr>
+    <tr>
+      <td>rare_share</td>
+      <td>Distribution of rare-query impressions</td>
+    </tr>
+    <tr>
+      <td>anon_share</td>
+      <td>Distribution of anonymized-query impressions</td>
+    </tr>
+    <tr>
+      <td>top_query_share</td>
+      <td>Concentration of impressions in the top query</td>
+    </tr>
+  </table>
+
+  <h3>Feature interpretation</h3>
+
+  <p>
+    Feature importance from the Random Forest is included in the capstone notebook.
+    It provides a relative indication of which available signals the model relied on most.
+    Feature importance should not be interpreted as causal influence.
+  </p>
+
+  <h3>Reproducible outputs</h3>
+
+  <p>
+    The repository contains the capstone notebook and the supporting notebooks used during
+    the internship. The model, feature preparation, grouped split, evaluation metrics,
+    and ranked recommendation process are documented in the notebook.
+  </p>
+
+
+  <h2>8. Reproducibility</h2>
+
+  <p>
+    The analysis was developed in Python using DuckDB, pandas, NumPy, and scikit-learn.
+    The Random Forest used 200 estimators with random seed 42 and parallel processing.
+  </p>
+
+  <p>
+    The capstone notebook contains the data preparation, feature construction, grouped
+    train/test split, model training, evaluation, feature interpretation, and recommendation
+    ranking.
+  </p>
+
+  <p>
+    To reproduce the work, clone the repository, install the required Python dependencies,
+    provide the required Hugging Face dataset access, and run
+    <code>work/notebooks/capstone.ipynb</code> from top to bottom.
+  </p>
+
+
+  <h2>9. Acknowledgments & Data Credit</h2>
+
+  <p>
+    Built on the
+    <a href="https://flyrank.ai" target="_blank" rel="noopener">
+      FlyRank ML Internship dataset
+    </a>.
+  </p>
+
+  <footer>
+    <p>
+      This research was completed as part of the FlyRank ML Internship.
+      Results are intended for learning, research, and decision-support purposes.
+    </p>
+  </footer>
+
+</body>
+</html>
