@@ -1,340 +1,745 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Search Intelligence: Predicting Content Performance Decline</title>
-    <style>
-        * { box-sizing: border-box; }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Search Intelligence: Predicting Content Performance Decline</title>
 
-        body {
-            margin: 0;
-            font-family: Arial, Helvetica, sans-serif;
-            line-height: 1.6;
-            color: #222;
-            background: #f5f5f5;
-        }
+  <style>
+    * {
+      box-sizing: border-box;
+    }
 
-        .container {
-            max-width: 900px;
-            margin: 40px auto;
-            padding: 50px;
-            background: #ffffff;
-        }
+    html {
+      scroll-behavior: smooth;
+    }
 
-        h1 { font-size: 30px; line-height: 1.2; margin-bottom: 16px; }
-        h2 { margin-top: 40px; padding-bottom: 6px; border-bottom: 1px solid #ddd; font-size: 22px; }
-        h3 { margin-top: 24px; font-size: 17px; }
-        p  { margin: 10px 0; }
+    body {
+      margin: 0;
+      background: #f5f5f5;
+      color: #222;
+      font-family: Georgia, "Times New Roman", serif;
+      line-height: 1.7;
+    }
 
-        ul, ol { padding-left: 22px; }
-        li { margin: 6px 0; }
+    .page {
+      max-width: 980px;
+      margin: 40px auto;
+      background: #fff;
+      padding: 70px 85px;
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    }
 
-        .meta {
-            margin-bottom: 30px;
-            padding: 16px 20px;
-            background: #f1f1f1;
-            border-left: 4px solid #333;
-            font-size: 14px;
-        }
-        .meta p { margin: 4px 0; }
+    header {
+      border-bottom: 1px solid #ccc;
+      padding-bottom: 30px;
+      margin-bottom: 45px;
+    }
 
-        .abstract {
-            padding: 18px 22px;
-            background: #fafafa;
-            border: 1px solid #ddd;
-            font-size: 15px;
-        }
+    h1 {
+      font-size: 34px;
+      line-height: 1.2;
+      font-weight: 600;
+      margin: 0 0 18px;
+      color: #111;
+    }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-            font-size: 14px;
-        }
-        th, td { border: 1px solid #ddd; padding: 9px 12px; text-align: left; }
-        th { background: #f1f1f1; font-weight: 600; }
+    h2 {
+      font-size: 23px;
+      margin-top: 48px;
+      margin-bottom: 18px;
+      padding-bottom: 7px;
+      border-bottom: 1px solid #ddd;
+      color: #111;
+    }
 
-        code {
-            background: #f1f1f1;
-            padding: 2px 5px;
-            border-radius: 3px;
-            font-family: Consolas, monospace;
-            font-size: 13px;
-        }
+    h3 {
+      font-size: 18px;
+      margin-top: 30px;
+      color: #222;
+    }
 
-        .note {
-            margin: 16px 0;
-            padding: 14px 18px;
-            border: 1px solid #ddd;
-            background: #fafafa;
-            font-size: 14px;
-        }
+    p {
+      margin: 0 0 16px;
+    }
 
-        .footer {
-            margin-top: 45px;
-            padding-top: 16px;
-            border-top: 1px solid #ddd;
-            color: #666;
-            font-size: 13px;
-        }
+    ul {
+      margin-top: 8px;
+      padding-left: 25px;
+    }
 
-        a { color: #1a5fb4; }
+    li {
+      margin-bottom: 7px;
+    }
 
-        @media (max-width: 680px) {
-            .container { margin: 0; padding: 24px; }
-            h1 { font-size: 24px; }
-            table { font-size: 13px; }
-        }
-    </style>
+    .meta {
+      color: #555;
+      font-size: 15px;
+      line-height: 1.8;
+    }
+
+    .abstract {
+      background: #f7f7f7;
+      border-left: 4px solid #333;
+      padding: 22px 25px;
+      margin: 25px 0 35px;
+    }
+
+    .abstract-title {
+      font-weight: bold;
+      margin-bottom: 8px;
+      font-size: 17px;
+    }
+
+    .question {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 20px 24px;
+      margin: 20px 0;
+      font-style: italic;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 22px 0 28px;
+      font-size: 14px;
+    }
+
+    th {
+      background: #f0f0f0;
+      font-weight: 600;
+      text-align: left;
+    }
+
+    th,
+    td {
+      border: 1px solid #d5d5d5;
+      padding: 10px 12px;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td {
+      background: #fafafa;
+    }
+
+    code {
+      background: #f1f1f1;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-family: Consolas, monospace;
+      font-size: 0.9em;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin: 25px 0;
+    }
+
+    .metric {
+      border: 1px solid #ddd;
+      padding: 16px;
+      text-align: center;
+      background: #fafafa;
+    }
+
+    .metric .value {
+      display: block;
+      font-size: 24px;
+      font-weight: bold;
+      margin-top: 5px;
+    }
+
+    .metric .label {
+      font-size: 13px;
+      color: #666;
+    }
+
+    .note {
+      background: #f8f8f8;
+      border: 1px solid #ddd;
+      padding: 18px 22px;
+      margin: 22px 0;
+    }
+
+    .warning {
+      border-left: 4px solid #777;
+      padding-left: 18px;
+      margin: 22px 0;
+    }
+
+    a {
+      color: #174a7e;
+      text-decoration: none;
+    }
+
+    a:hover {
+      text-decoration: underline;
+    }
+
+    .footer {
+      margin-top: 60px;
+      padding-top: 25px;
+      border-top: 1px solid #ccc;
+      color: #666;
+      font-size: 14px;
+    }
+
+    .toc {
+      background: #fafafa;
+      border: 1px solid #ddd;
+      padding: 20px 25px;
+      margin-bottom: 35px;
+    }
+
+    .toc strong {
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .toc a {
+      display: block;
+      margin: 3px 0;
+    }
+
+    @media (max-width: 800px) {
+      .page {
+        margin: 0;
+        padding: 35px 25px;
+        box-shadow: none;
+      }
+
+      h1 {
+        font-size: 28px;
+      }
+
+      .metric-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    @media (max-width: 500px) {
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        font-size: 13px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+      }
+
+      .page {
+        margin: 0;
+        box-shadow: none;
+        max-width: none;
+      }
+
+      a {
+        color: #111;
+      }
+    }
+  </style>
 </head>
-<body>
-<div class="container">
 
+<body>
+
+<div class="page">
+
+  <header>
     <h1>Search Intelligence: Predicting Content Performance Decline</h1>
 
     <div class="meta">
-        <p><strong>Author:</strong> Shamir Ali</p>
-        <p><strong>Lane:</strong> Refresh / Content Opportunity Scoring</p>
-        <p><strong>Project:</strong> FlyRank ML Internship</p>
-        <p><strong>Date:</strong> August 2026</p>
+      <strong>Author:</strong> Shamir Ali<br>
+      <strong>Lane:</strong> Refresh / Content Opportunity Scoring<br>
+      <strong>Project:</strong> FlyRank ML Internship<br>
+      <strong>Date:</strong> August 2026
     </div>
+  </header>
 
+  <nav class="toc">
+    <strong>Contents</strong>
+    <a href="#introduction">1. Introduction</a>
+    <a href="#data">2. Data</a>
+    <a href="#methodology">3. Methodology</a>
+    <a href="#results">4. Results</a>
+    <a href="#limitations">5. Limitations & Honest Framing</a>
+    <a href="#recommendations">6. Ranked Recommendations</a>
+    <a href="#artifacts">7. Artifacts</a>
+    <a href="#reproducibility">8. Reproducibility</a>
+    <a href="#acknowledgments">9. Acknowledgments & Data Credit</a>
+  </nav>
 
-    <h2>Abstract</h2>
-    <div class="abstract">
-        <p>
-            Can historical search-performance metrics identify content pages at risk of an impressions decline in the following month?
-            Using the FlyRank internship warehouse (85,475 active content pages, Feb–Mar 2026), we trained a Random Forest classifier
-            on five query-level features and evaluated it on a client-grouped held-out split.
-            After correcting for temporal leakage found in the Week-6 audit, the audited model achieved
-            <strong>38.1% precision</strong> on the decline class versus a <strong>9.6% baseline precision</strong>,
-            though recall remained modest at 6.8%.
-            The output is a ranked priority queue intended for editorial decision-support — not a causal forecast.
-        </p>
-    </div>
+  <section class="abstract">
+    <div class="abstract-title">Abstract</div>
 
+    <p>
+      Can historical search-performance metrics identify content pages at risk
+      of an impressions decline in the following month? Using the FlyRank
+      internship warehouse, a Random Forest classifier was trained using
+      February 2026 historical signals and evaluated using a client-grouped
+      held-out split. The Week-6 audit identified a temporal leakage concern
+      in the original feature construction, and the audited model achieved
+      approximately <strong>42.4% precision</strong>, <strong>6.3% recall</strong>,
+      and <strong>0.110 F1</strong> on the decline class. The results indicate
+      that the available features provide limited coverage of subsequent
+      declines, although the model can rank a smaller set of pages for review.
+      The resulting queue is therefore treated as directional
+      <strong>decision-support</strong>, rather than a causal forecast or
+      automatic content recommendation.
+    </p>
+  </section>
 
+  <section id="introduction">
     <h2>1. Introduction</h2>
 
     <p>
-        Content teams must regularly decide which pages to review and refresh. Without tooling, the choice is either
-        arbitrary or relies on manual spot-checks. The goal of this project is to rank pages by their estimated
-        risk of an impressions drop, so editors can focus limited review time on the pages that need it most.
+      Content teams must regularly decide which pages should be reviewed or
+      refreshed. Without a ranking method, this process can require manual
+      inspection of many pages. The goal of this project is to test whether
+      historical search-performance signals can help prioritize pages for
+      review.
     </p>
 
     <p>
-        A wrong recommendation wastes editorial effort (false positive) or lets a declining page go unnoticed (false negative).
-        This system is therefore treated as a <strong>decision-support prioritization tool</strong> — a human editor
-        makes the final call.
+      The practical decision supported by the model is not whether a page
+      should definitely be changed. Instead, the output is intended to help
+      an editor decide where limited review time could be spent first.
     </p>
 
+    <div class="question">
+      <strong>Research question:</strong>
+      To what extent can historical SEO metrics from February 2026 identify
+      content pages that experience a significant decline in organic search
+      impressions in March 2026?
+    </div>
+  </section>
 
+  <section id="data">
     <h2>2. Data</h2>
 
-    <p>Source: <strong>FlyRank/internship-warehouse</strong> on Hugging Face.</p>
-    <p>Tables used: <code>fact_content_daily_performance</code> and <code>fact_content_query_90d</code>.</p>
+    <p>
+      The analysis uses the
+      <strong>FlyRank/internship-warehouse</strong> dataset hosted on
+      Hugging Face.
+    </p>
+
+    <p><strong>Tables used:</strong></p>
 
     <ul>
-        <li><strong>Feature window:</strong> February 2026 impressions and query signals.</li>
-        <li><strong>Outcome window:</strong> March 2026 impressions (used only to construct the binary label).</li>
-        <li><strong>Scope:</strong> 85,475 content pages with positive February impressions after null-dropping.</li>
+      <li><code>fact_content_daily_performance</code></li>
+      <li><code>fact_content_query_90d</code></li>
     </ul>
 
+    <p>
+      February 2026 was used as the feature period and March 2026 as the
+      outcome period. Records with zero or missing previous-month impressions
+      were excluded because the decline calculation requires a positive
+      February value. Rows with missing model features were also removed.
+    </p>
+
     <h3>Features</h3>
+
     <table>
-        <thead>
-            <tr><th>Feature</th><th>Description</th></tr>
-        </thead>
-        <tbody>
-            <tr><td><code>prev_month_impressions</code></td><td>Total Feb 2026 impressions for the content page.</td></tr>
-            <tr><td><code>visible_queries</code></td><td>Count of search queries the content appeared for.</td></tr>
-            <tr><td><code>rare_share</code></td><td>Proportion of impressions driven by rare/long-tail queries.</td></tr>
-            <tr><td><code>anon_share</code></td><td>Proportion of impressions driven by anonymized queries.</td></tr>
-            <tr><td><code>top_query_share</code></td><td>Share of impressions concentrated in the single top query.</td></tr>
-        </tbody>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>prev_month_impressions</code></td>
+          <td>Total February impressions for the content page.</td>
+        </tr>
+        <tr>
+          <td><code>visible_queries</code></td>
+          <td>Number of search queries associated with the content.</td>
+        </tr>
+        <tr>
+          <td><code>rare_share</code></td>
+          <td>Share of impressions associated with rare queries.</td>
+        </tr>
+        <tr>
+          <td><code>anon_share</code></td>
+          <td>Share of impressions associated with anonymized queries.</td>
+        </tr>
+        <tr>
+          <td><code>top_query_share</code></td>
+          <td>Share of impressions concentrated in the top query.</td>
+        </tr>
+      </tbody>
     </table>
 
     <p>
-        Client and content identifiers (<code>client_hash_id</code>, <code>content_hash_id</code>) were used only
-        for grouping and joining — never as model inputs. Label-derived fields (<code>trend_direction</code>,
-        <code>trend_pct</code>) were excluded to prevent target leakage (identified in the Week-6 audit).
+      Client and content identifiers were used for grouping and joining only.
+      They were not supplied as model features. Label-derived fields were
+      also excluded from the model inputs.
     </p>
+  </section>
 
-
+  <section id="methodology">
     <h2>3. Methodology</h2>
 
-    <h3>Target</h3>
+    <h3>Target definition</h3>
+
     <p>
-        A page is labelled <strong>declining (1)</strong> if its March 2026 impressions are less than 80% of its
-        February 2026 impressions — i.e., a drop of more than 20%. All other pages are labelled 0.
-        The decline class makes up approximately <strong>14.3%</strong> of the dataset.
+      A page is labelled <strong>declining (1)</strong> when March impressions
+      are less than 80% of February impressions. Otherwise it is labelled
+      0. This represents a decline of more than 20%.
     </p>
 
-    <h3>Baseline (Week-4)</h3>
+    <h3>Baseline</h3>
+
     <p>
-        A simple visibility-based rule: pages with ≥ 1,000 prior impressions and an average GSC position
-        between 4 and 15 are flagged as high-risk. This is a fair representation of common editorial intuition.
+      The Week-4 baseline used a simple visibility-based rule. Pages with at
+      least 1,000 impressions and an average GSC position between 4 and 15
+      were prioritized.
     </p>
 
-    <h3>Model (Week-5 → Audited in Week-6)</h3>
+    <h3>Model</h3>
+
     <p>
-        A <strong>Random Forest classifier</strong> (200 estimators, <code>class_weight="balanced"</code>,
-        <code>random_state=42</code>). Balanced class weights compensate for the imbalanced target.
+      The model is a Random Forest classifier with 200 estimators,
+      <code>class_weight="balanced"</code>, and random state 42.
     </p>
 
     <h3>Validation</h3>
-    <p>
-        Data split using <strong>GroupShuffleSplit</strong> with <code>client_hash_id</code> as the group key
-        (80/20, <code>random_state=42</code>). This ensures no client seen in training appears in testing,
-        giving a realistic measure of generalization to new domains.
-    </p>
-    <ul>
-        <li><strong>Train:</strong> 54,384 rows, 29 clients</li>
-        <li><strong>Test:</strong> 31,091 rows, 8 clients</li>
-    </ul>
 
     <p>
-        The Week-6 audit confirmed that the 90-day query aggregate statistics are historical aggregates and
-        do not embed future outcome information, so they remain valid features after the audit.
+      A <strong>GroupShuffleSplit</strong> was used with
+      <code>client_hash_id</code> as the grouping variable. The split used
+      80% of the data for training and 20% for testing, with random state 42.
+      This prevents the same client from appearing in both the training and
+      test groups.
     </p>
 
+    <h3>Leakage audit</h3>
 
+    <div class="warning">
+      The initial Week-5 model produced substantially stronger results.
+      During the Week-6 validation audit, the feature construction was
+      examined for temporal leakage. After restricting the query signals to
+      information available before the outcome period, performance decreased
+      substantially. The audited results below are therefore treated as the
+      more appropriate evidence for the final paper.
+    </div>
+  </section>
+
+  <section id="results">
     <h2>4. Results</h2>
 
-    <p>Evaluated on the held-out client-grouped test set (31,091 pages, 14.3% decline base rate):</p>
-
-    <table>
-        <thead>
-            <tr><th>Metric</th><th>Audited Random Forest</th><th>Week-4 Baseline</th></tr>
-        </thead>
-        <tbody>
-            <tr><td>Accuracy</td><td>0.871</td><td>0.668</td></tr>
-            <tr><td>Precision</td><td>0.381</td><td>0.096</td></tr>
-            <tr><td>Recall</td><td>0.068</td><td>0.201</td></tr>
-            <tr><td>F1 Score</td><td>0.116</td><td>0.130</td></tr>
-        </tbody>
-    </table>
-
-    <div class="note">
-        <p>
-            The model is more precise than the baseline (38.1% vs 9.6%), meaning fewer false alarms per flagged page.
-            However, it catches a smaller share of actually declining pages (recall 6.8% vs 20.1%).
-            The trade-off is: the model flags a smaller, higher-confidence set; the baseline flags more pages but
-            most are false positives given the low base rate.
-        </p>
-        <p>
-            <strong>Key finding:</strong> After removing lookahead leakage in the Week-6 audit, the model's F1
-            dropped from ~0.74 (naive split) to 0.116. This confirms that the original inflated performance was
-            an artefact of data leakage — not real predictive signal. Both the model and baseline have similar F1,
-            suggesting this is a genuinely hard prediction task with the available features alone.
-        </p>
-    </div>
-
-    <h3>Feature Importance</h3>
-    <table>
-        <thead>
-            <tr><th>Feature</th><th>Importance</th></tr>
-        </thead>
-        <tbody>
-            <tr><td><code>prev_month_impressions</code></td><td>25.9%</td></tr>
-            <tr><td><code>anon_share</code></td><td>24.3%</td></tr>
-            <tr><td><code>rare_share</code></td><td>22.3%</td></tr>
-            <tr><td><code>top_query_share</code></td><td>16.5%</td></tr>
-            <tr><td><code>visible_queries</code></td><td>11.0%</td></tr>
-        </tbody>
-    </table>
-
-
-    <h2>5. Limitations &amp; Honest Framing</h2>
-
-    <ul>
-        <li>The model identifies statistical associations in the data — it does not explain <em>why</em> impressions decline.</li>
-        <li>It does not replicate or predict Google's ranking algorithm.</li>
-        <li>Seasonality, content quality, and indexing changes are not captured in the features.</li>
-        <li>Evaluated on a single two-month window (Feb–Mar 2026); performance on other periods is unknown.</li>
-        <li>A client-grouped split was used, but 8 test clients is a small sample — results are directional.</li>
-        <li>Every recommendation requires a human review before any editorial action is taken.</li>
-    </ul>
-
     <p>
-        Results are best described as <strong>observed, directional decision-support evidence</strong>
-        — not a production deployment or a causal claim.
+      The audited model was evaluated on the held-out client-grouped test
+      set. The following values are from the audited W06 run.
     </p>
 
+    <div class="metric-grid">
+      <div class="metric">
+        <span class="label">Accuracy</span>
+        <span class="value">0.857</span>
+      </div>
 
+      <div class="metric">
+        <span class="label">Precision</span>
+        <span class="value">0.424</span>
+      </div>
+
+      <div class="metric">
+        <span class="label">Recall</span>
+        <span class="value">0.063</span>
+      </div>
+
+      <div class="metric">
+        <span class="label">F1</span>
+        <span class="value">0.110</span>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Metric</th>
+          <th>Audited Random Forest</th>
+          <th>Week-4 Baseline</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Accuracy</td>
+          <td>0.857</td>
+          <td>0.668</td>
+        </tr>
+        <tr>
+          <td>Precision</td>
+          <td>0.424</td>
+          <td>0.096</td>
+        </tr>
+        <tr>
+          <td>Recall</td>
+          <td>0.063</td>
+          <td>0.201</td>
+        </tr>
+        <tr>
+          <td>F1 Score</td>
+          <td>0.110</td>
+          <td>0.130</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      The audited model has higher precision than the baseline but much lower
+      recall. In practical terms, the model identifies a smaller group of
+      pages with a higher measured proportion of decline cases, but it misses
+      most of the declining pages.
+    </p>
+
+    <p>
+      Accuracy should not be treated as the main result because the decline
+      class is a minority class. The precision, recall, and F1 results give a
+      more useful view of the classification behaviour.
+    </p>
+
+    <h3>Effect of the validation audit</h3>
+
+    <p>
+      The original Week-5 model reported approximately 0.749 F1 on its
+      evaluation. After the temporal leakage concern was addressed, the
+      audited F1 decreased to approximately 0.110. This large change is an
+      important finding of the project: the original performance should not
+      be presented as evidence of reliable predictive performance.
+    </p>
+
+    <h3>Feature Importance</h3>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>Importance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>prev_month_impressions</code></td>
+          <td>25.9%</td>
+        </tr>
+        <tr>
+          <td><code>anon_share</code></td>
+          <td>24.3%</td>
+        </tr>
+        <tr>
+          <td><code>rare_share</code></td>
+          <td>22.3%</td>
+        </tr>
+        <tr>
+          <td><code>top_query_share</code></td>
+          <td>16.5%</td>
+        </tr>
+        <tr>
+          <td><code>visible_queries</code></td>
+          <td>11.0%</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <p>
+      These importances describe how the Random Forest used the supplied
+      features. They do not establish that any feature causes an impressions
+      decline.
+    </p>
+  </section>
+
+  <section id="limitations">
+    <h2>5. Limitations & Honest Framing</h2>
+
+    <ul>
+      <li>
+        The model identifies statistical patterns in the available data. It
+        does not explain why a page's impressions decline.
+      </li>
+      <li>
+        The model does not reproduce or predict Google's ranking algorithm.
+      </li>
+      <li>
+        Seasonality, content quality, indexing changes, competitors, and
+        changes in search intent are not fully represented by the features.
+      </li>
+      <li>
+        The experiment uses a February-March 2026 window, so performance on
+        other periods is unknown.
+      </li>
+      <li>
+        The client-grouped test contains a limited number of client groups,
+        so the result should be considered directional.
+      </li>
+      <li>
+        The low recall means the queue should not be treated as a complete
+        list of declining pages.
+      </li>
+      <li>
+        A human reviewer should make the final decision before any content
+        change.
+      </li>
+    </ul>
+
+    <div class="note">
+      <strong>Overall framing:</strong>
+      The results are best treated as observed and measured,
+      directional decision-support evidence. They are not a causal claim,
+      production system, or guarantee that refreshing a page will improve
+      its future performance.
+    </div>
+  </section>
+
+  <section id="recommendations">
     <h2>6. Ranked Recommendations</h2>
 
     <p>
-        The model outputs a probability score per page. Pages on the held-out test set (31,091) are
-        grouped into three operational tiers:
+      The model score is converted into three operational priority levels.
+      These thresholds were selected for the action playbook and are not
+      statistically validated decision boundaries.
     </p>
 
     <table>
-        <thead>
-            <tr><th>Priority</th><th>Model Score</th><th>Suggested Action</th><th>Count</th></tr>
-        </thead>
-        <tbody>
-            <tr><td><strong>High</strong></td><td>≥ 0.70</td><td>Review for content refresh</td><td>78 (0.3%)</td></tr>
-            <tr><td><strong>Medium</strong></td><td>0.50 – 0.69</td><td>Monitor and consider review</td><td>613 (2.0%)</td></tr>
-            <tr><td><strong>Low</strong></td><td>&lt; 0.50</td><td>Low priority / monitor</td><td>30,400 (97.8%)</td></tr>
-        </tbody>
+      <thead>
+        <tr>
+          <th>Priority</th>
+          <th>Model Score</th>
+          <th>Suggested Action</th>
+          <th>Observed Queue Size</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>High</strong></td>
+          <td>&ge; 0.70</td>
+          <td>Review for possible content refresh</td>
+          <td>76</td>
+        </tr>
+        <tr>
+          <td><strong>Medium</strong></td>
+          <td>0.50 - 0.69</td>
+          <td>Monitor and consider review</td>
+          <td>617</td>
+        </tr>
+        <tr>
+          <td><strong>Low</strong></td>
+          <td>&lt; 0.50</td>
+          <td>Low priority / monitor</td>
+          <td>30,398</td>
+        </tr>
+      </tbody>
     </table>
 
     <p>
-        These thresholds are operational categories for prioritization — not statistically validated cutoffs.
-        Editors start with High-priority pages, validate the decline against GSC data, and decide whether a refresh is warranted.
+      The ranked queue is intended to help editors decide where to spend
+      review time first. A high score does not mean that a page definitely
+      needs a refresh. Editors should check the actual search performance,
+      content, search intent, seasonality, and other available context before
+      taking action.
     </p>
 
+    <h3>What should not be automated</h3>
 
+    <ul>
+      <li>Automatically rewriting or publishing content.</li>
+      <li>Automatically removing pages.</li>
+      <li>Automatically changing titles or search targeting.</li>
+      <li>Automatically treating a model score as proof of a ranking problem.</li>
+      <li>Automatically assuming that a refresh will increase traffic.</li>
+    </ul>
+  </section>
+
+  <section id="artifacts">
     <h2>7. Artifacts</h2>
 
-    <p>All artifacts are committed in the repository under <code>work/outputs/</code>:</p>
+    <p>
+      The analysis generates supporting artifacts for inspection and reuse in
+      the research report.
+    </p>
+
     <ul>
-        <li><code>model_vs_baseline.csv</code> — metric comparison table.</li>
-        <li><code>feature_importance.csv</code> — Random Forest feature importances.</li>
-        <li><code>priority_distribution.csv</code> — count and proportion per priority tier.</li>
-        <li><code>content_action_queue.csv</code> — ranked queue of 31,091 pages with model score, priority, reason code, and recommended action.</li>
+      <li><code>model_vs_baseline.csv</code> — model and baseline metrics.</li>
+      <li><code>feature_importance.csv</code> — Random Forest feature importance.</li>
+      <li><code>priority_distribution.csv</code> — priority counts and proportions.</li>
+      <li><code>content_action_queue.csv</code> — ranked review queue.</li>
     </ul>
 
+    <p>
+      The exported queue contains anonymized content identifiers and model
+      outputs. It is intended for analysis and reproduction of the paper,
+      not as a production editorial system.
+    </p>
+  </section>
 
+  <section id="reproducibility">
     <h2>8. Reproducibility</h2>
 
-    <p>Stack: Python, DuckDB, pandas, NumPy, scikit-learn.</p>
-    <ul>
-        <li>Random seed: <code>42</code> for both GroupShuffleSplit and RandomForestClassifier.</li>
-        <li>To reproduce: clone the repo, install dependencies, set <code>HF_TOKEN</code>, and run
-            <code>work/notebooks/capstone.ipynb</code> top to bottom.</li>
-    </ul>
-
-    <p>Supporting notebooks (in order of development):</p>
-    <ul>
-        <li><code>w01_research_question.ipynb</code> — problem framing (ML-02)</li>
-        <li><code>w02_ml_task_framing.ipynb</code> — ML task definition (ML-03)</li>
-        <li><code>w03_data_contract.ipynb</code> — data contract &amp; schema (ML-04)</li>
-        <li><code>w04_baseline_score.ipynb</code> — visibility baseline (ML-07)</li>
-        <li><code>w05_model.ipynb</code> — initial RF model (ML-08)</li>
-        <li><code>w06_validation_audit.ipynb</code> — leakage audit &amp; grouped split (ML-09)</li>
-        <li><code>w07_action_playbook.ipynb</code> — ranked action queue (ML-10)</li>
-        <li><code>capstone.ipynb</code> — full pipeline end-to-end (ML-11/ML-12)</li>
-    </ul>
-
-
-    <h2>9. Acknowledgments &amp; Data Credit</h2>
-
     <p>
-        Built on the
-        <strong><a href="https://flyrank.ai" target="_blank" rel="noopener noreferrer">FlyRank ML Internship dataset</a></strong>.
-    </p>
-    <p>
-        Completed as part of the FlyRank ML Internship. All results are intended for
-        learning, research, and decision-support purposes only.
+      The project uses Python, DuckDB, pandas, NumPy, scikit-learn, and
+      Hugging Face-hosted parquet data.
     </p>
 
-    <div class="footer">
-        <p>FlyRank ML Internship — Search Intelligence Capstone &mdash; August 2026</p>
-    </div>
+    <p>
+      The main pipeline can be inspected in
+      <code>work/notebooks/capstone.ipynb</code>. The supporting notebooks
+      document the development process:
+    </p>
+
+    <ul>
+      <li><code>w01_research_question.ipynb</code> — research question and problem framing.</li>
+      <li><code>w02_ml_task_framing.ipynb</code> — ML task definition.</li>
+      <li><code>w03_data_contract.ipynb</code> — data contract and schema.</li>
+      <li><code>w04_baseline_score.ipynb</code> — baseline scoring.</li>
+      <li><code>w05_model.ipynb</code> — initial Random Forest model.</li>
+      <li><code>w06_validation_audit.ipynb</code> — validation and leakage audit.</li>
+      <li><code>w07_action_playbook.ipynb</code> — ranked action queue.</li>
+      <li><code>capstone.ipynb</code> — final capstone analysis.</li>
+    </ul>
+
+    <p>
+      The main random seed used in the analysis is <code>42</code>. The
+      validation design uses a client-grouped train/test split.
+    </p>
+  </section>
+
+  <section id="acknowledgments">
+    <h2>9. Acknowledgments & Data Credit</h2>
+
+    <p>
+      Built on the
+      <a href="https://flyrank.ai/" target="_blank" rel="noopener">
+        <strong>FlyRank ML Internship dataset</strong>
+      </a>.
+    </p>
+
+    <p>
+      This work was completed as part of the FlyRank ML Internship. The
+      analysis is intended for learning, research, and decision-support
+      purposes only.
+    </p>
+
+    <p>
+      FlyRank ML Internship — Search Intelligence Capstone — August 2026
+    </p>
+  </section>
+
+  <div class="footer">
+    <p>
+      Search Intelligence: Predicting Content Performance Decline —
+      Shamir Ali — August 2026
+    </p>
+  </div>
 
 </div>
+
 </body>
 </html>
